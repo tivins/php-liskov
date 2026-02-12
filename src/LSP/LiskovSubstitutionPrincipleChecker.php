@@ -13,7 +13,8 @@ use ReflectionMethod;
  * with respect to its interfaces and parent class.
  *
  * Currently checks:
- * - Exception contract violations (throws not declared in parent/interface)
+ * - Exception contract violations via docblock (@throws not declared in parent/interface)
+ * - Exception contract violations via AST (actual throw statements not allowed by contract)
  *
  * @todo Check parameter type contravariance (preconditions)
  * @todo Check return type covariance (postconditions)
@@ -87,10 +88,11 @@ readonly class LiskovSubstitutionPrincipleChecker
     }
 
     /**
-     * Check if a class method declares exceptions not allowed by the contract method.
+     * Check if a class method declares or actually throws exceptions not allowed by the contract.
      *
-     * A violation occurs when the class method declares @throws for exception types
-     * that are not declared in the contract (interface/parent) method.
+     * Two types of violations are detected:
+     * - Docblock violations: @throws declarations not present in the contract
+     * - Code violations: actual throw statements (AST) for exceptions not in the contract
      *
      * @return LspViolation[]
      */
@@ -103,18 +105,32 @@ readonly class LiskovSubstitutionPrincipleChecker
         $violations = [];
 
         $contractThrows = $this->throwsDetector->getDeclaredThrows($contractMethod);
-        $classThrows = $this->throwsDetector->getDeclaredThrows($classMethod);
+        $classThrowsDeclared = $this->throwsDetector->getDeclaredThrows($classMethod);
+        $classThrowsActual = $this->throwsDetector->getActualThrows($classMethod);
 
-        // Find exceptions declared in the class but not in the contract
-        $unexpectedThrows = array_diff($classThrows, $contractThrows);
-
-        foreach ($unexpectedThrows as $exceptionType) {
+        // Violation if the class DECLARES throws not present in the contract
+        $unexpectedDeclared = array_diff($classThrowsDeclared, $contractThrows);
+        foreach ($unexpectedDeclared as $exceptionType) {
             $violations[] = new LspViolation(
                 className: $class->getName(),
                 methodName: $classMethod->getName(),
                 contractName: $contract->getName(),
                 reason: sprintf(
-                    'Throws %s which is not declared in the contract',
+                    '@throws %s declared in docblock but not allowed by the contract',
+                    $exceptionType,
+                ),
+            );
+        }
+
+        // Violation if the class ACTUALLY throws exceptions not present in the contract
+        $unexpectedActual = array_diff($classThrowsActual, $contractThrows);
+        foreach ($unexpectedActual as $exceptionType) {
+            $violations[] = new LspViolation(
+                className: $class->getName(),
+                methodName: $classMethod->getName(),
+                contractName: $contract->getName(),
+                reason: sprintf(
+                    'throws %s in code (detected via AST) but not allowed by the contract',
                     $exceptionType,
                 ),
             );

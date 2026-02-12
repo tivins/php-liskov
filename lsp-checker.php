@@ -11,6 +11,8 @@ $classes = [
     MyClass1::class,
     MyClass2::class,
     MyClass3::class,
+    MyClass4::class,
+    MyClass5::class,
 ];
 
 

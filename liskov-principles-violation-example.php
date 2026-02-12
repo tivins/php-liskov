@@ -88,3 +88,60 @@ class MyClass3 implements MyInterface3
         }
     }
 }
+
+# ------------------------------------------------------------
+# Example 4: Violation detected only via AST (no @throws docblock)
+# The developer forgot to document the exception, but the code throws it.
+# Only AST analysis can catch this violation.
+# ------------------------------------------------------------
+
+interface MyInterface4
+{
+    public function process(): void;
+}
+
+class MyClass4 implements MyInterface4
+{
+    /**
+     * This method throws an exception but has no @throws docblock.
+     * Docblock-only analysis would miss this violation entirely.
+     * AST analysis detects the actual throw statement.
+     */
+    public function process(): void
+    {
+        if (!file_exists('/tmp/required-file')) {
+            throw new RuntimeException("Required file not found");
+        }
+    }
+}
+
+# ------------------------------------------------------------
+# Example 5: Violation of Liskov Substitution Principle (Incorrect Implementation)
+# The developer forgot to document the exception, but the code throws it via a private method.
+# Only AST analysis can catch this violation.
+# ------------------------------------------------------------
+
+interface MyInterface5
+{
+    public function process(): void;
+}
+
+class MyClass5 implements MyInterface5
+{
+    /**
+     * This method throws an exception but has no @throws docblock.
+     * Docblock-only analysis would miss this violation entirely.
+     * AST analysis detects the actual throw statement.
+     */
+    public function process(): void
+    {
+        $this->doSomething();
+    }
+
+    private function doSomething(): void
+    {
+        if (!file_exists('/tmp/required-file')) {
+            throw new RuntimeException("Required file not found");
+        }
+    }
+}
