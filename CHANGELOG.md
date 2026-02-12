@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- **GitHub Actions CI** — workflow `.github/workflows/ci.yml` runs PHPUnit on push/PR for PHP 8.2, 8.3, 8.4
 - **PHPUnit tests** — `tests/LiskovSubstitutionPrincipleCheckerTest.php` uses the example classes (MyClass1–MyClass5) to assert expected LSP violations and passes
 - `phpunit.xml.dist` for test configuration
 
