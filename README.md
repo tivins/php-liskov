@@ -48,7 +48,7 @@ composer require tivins/poc-liskov-check
 Pass a directory path as argument. The checker will recursively find all PHP classes and check them:
 
 ```bash
-php lsp-checker.php src/
+vendor/bin/lsp-checker src/
 ```
 
 The classes (and their contracts — interfaces, parent classes) must be loadable. If a `vendor/autoload.php` is found in or near the target directory, it is included automatically.
@@ -56,8 +56,8 @@ The classes (and their contracts — interfaces, parent classes) must be loadabl
 Without a directory, the script prints usage and exits:
 
 ```bash
-php lsp-checker.php
-# Usage: lsp-checker.php <directory> [--json] [--quiet]
+vendor/bin/lsp-checker
+# Usage: lsp-checker <directory> [--json] [--quiet]
 #   ...
 ```
 
@@ -89,16 +89,16 @@ So you can capture only the result in a file and keep logs separate.
 
 | Goal | Command |
 |------|--------|
-| Save JSON report to a file | `php lsp-checker.php src/ --json > report.json` |
-| Save human result, hide progress | `php lsp-checker.php src/ --quiet > result.txt` |
-| Save progress/summary to a log | `php lsp-checker.php src/ 2> progress.log` (result stays on terminal) |
-| JSON only, no progress (e.g. CI) | `php lsp-checker.php src/ --json --quiet 2>/dev/null` |
-| Result to file, progress to another file | `php lsp-checker.php src/ --json > report.json 2> progress.log` |
+| Save JSON report to a file | `vendor/bin/lsp-checker src/ --json > report.json` |
+| Save human result, hide progress | `vendor/bin/lsp-checker src/ --quiet > result.txt` |
+| Save progress/summary to a log | `vendor/bin/lsp-checker src/ 2> progress.log` (result stays on terminal) |
+| JSON only, no progress (e.g. CI) | `vendor/bin/lsp-checker src/ --json --quiet 2>/dev/null` |
+| Result to file, progress to another file | `vendor/bin/lsp-checker src/ --json > report.json 2> progress.log` |
 
 To pipe the JSON into another tool (e.g. [jq](https://jqlang.github.io/jq/)), use `--json --quiet` so only JSON goes to stdout:
 
 ```bash
-php lsp-checker.php src/ --json --quiet | jq 'length'
+vendor/bin/lsp-checker src/ --json --quiet | jq 'length'
 ```
 
 Example output:
@@ -138,7 +138,7 @@ src/
     ├── FormatType.php                          # Output format enum (TEXT / JSON)
     └── StdWriter.php                           # stdout / stderr writer with format filtering
 
-lsp-checker.php                              # CLI entry point
+lsp-checker                                  # CLI entry point
 liskov-principles-violation-example.php      # Example classes (MyClass1–MyClass5), used by PHPUnit tests
 ```
 

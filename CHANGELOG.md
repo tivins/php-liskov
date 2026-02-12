@@ -11,6 +11,13 @@
 - **CLI** — `<directory>` is now required; without arguments the script prints usage and exits with code 2
 - Removed `--example` option; the built-in example is only used by unit tests (`vendor/bin/phpunit`)
 
+## [0.3.2] - 2026-02-12
+
+### Changed
+- **CLI binary** — entry point renamed from `lsp-checker.php` to `lsp-checker` (no extension); use `vendor/bin/lsp-checker <options>` after `composer require tivins/poc-liskov-check`
+- Autoload path now works both when run from package root and when installed as a dependency (`dirname(__DIR__) . '/autoload.php'` when in `vendor/bin`)
+- Fixed `__DIR__` constant (was incorrectly `__dir__`)
+
 ## [0.3.1] - 2026-02-12
 
 ### Fixed
@@ -24,7 +31,7 @@
 - `ClassFinder` class (`src/Process/ClassFinder.php`) — uses php-parser to extract FQCN from PHP files; auto-detects `vendor/autoload.php` in the target project
 
 ### Changed
-- `lsp-checker.php` now accepts `<path>` as first positional argument; without arguments, the built-in example still runs (backward-compatible)
+- `lsp-checker` (formerly `lsp-checker.php`) now accepts `<path>` as first positional argument; without arguments, the built-in example still runs (backward-compatible)
 
 ## [0.2.0] - 2026-02-12
 
@@ -53,5 +60,5 @@
   - Checks against all implemented interfaces
   - Checks against parent class
   - Detects `@throws` declarations not allowed by the contract
-- Entry point script `lsp-checker.php` with colored pass/fail output
+- Entry point script `lsp-checker` (formerly `lsp-checker.php`) with colored pass/fail output
 - Example violation classes for testing (`liskov-principles-violation-example.php`)

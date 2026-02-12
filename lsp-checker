@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 use Tivins\LSP\LiskovSubstitutionPrincipleChecker;
@@ -6,7 +7,11 @@ use Tivins\Process\ClassFinder;
 use Tivins\Process\FormatType;
 use Tivins\Process\StdWriter;
 
-require 'vendor/autoload.php';
+$autoload = __DIR__ . '/vendor/autoload.php';
+if (!is_file($autoload)) {
+    $autoload = dirname(__DIR__) . '/autoload.php';
+}
+require $autoload;
 
 // --- CLI options -----------------------------------------------------------
 
@@ -26,7 +31,7 @@ foreach (array_slice($argv, 1) as $arg) {
 }
 
 if ($directory === null) {
-    fwrite(STDERR, "Usage: lsp-checker.php <directory> [--json] [--quiet]\n");
+    fwrite(STDERR, "Usage: lsp-checker <directory> [--json] [--quiet]\n");
     fwrite(STDERR, "  <directory>  Path to a directory containing PHP files to check.\n");
     fwrite(STDERR, "  --json       Output violations as JSON.\n");
     fwrite(STDERR, "  --quiet      Minimal output.\n");
