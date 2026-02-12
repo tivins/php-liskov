@@ -7,8 +7,12 @@ use Tivins\Process\ClassFinder;
 use Tivins\Process\FormatType;
 use Tivins\Process\StdWriter;
 
-# We are in vendor/bin/lsp-checker, so we need to load the autoload.php from the root project
-$autoload = __dir__ . '/../vendor/autoload.php';
+# We are in vendor\tivins\poc-liskov-check, so we need to load the autoload.php from the root project
+$autoload = 'vendor/autoload.php';
+if (!is_file($autoload)) {
+    // $autoload = __dir__ . '/../autoload.php';
+    throw new Exception('autoload.php not found. Current directory: ' . __dir__);
+}
 require $autoload;
 
 // --- CLI options -----------------------------------------------------------
