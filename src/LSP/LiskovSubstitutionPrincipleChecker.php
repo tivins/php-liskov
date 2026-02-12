@@ -18,13 +18,10 @@ use ReflectionMethod;
  * @todo Check parameter type contravariance (preconditions)
  * @todo Check return type covariance (postconditions)
  */
-class LiskovSubstitutionPrincipleChecker
+readonly class LiskovSubstitutionPrincipleChecker
 {
-    private ThrowsDetector $throwsDetector;
-
-    public function __construct(?ThrowsDetector $throwsDetector = null)
+    public function __construct(private ThrowsDetector $throwsDetector)
     {
-        $this->throwsDetector = $throwsDetector ?? new ThrowsDetector();
     }
 
     /**

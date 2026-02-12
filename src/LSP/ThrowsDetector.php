@@ -10,13 +10,13 @@ use Exception;
 class ThrowsDetector
 {
     /**
-     * Retourne la liste des exceptions déclarées dans le @throws du docblock.
+     * Retourne la liste des exceptions déclarées dans le "@throws" du docblock.
      *
      * Formats supportés :
-     * - `@throws RuntimeException`
-     * - `@throws RuntimeException|InvalidArgumentException`
-     * - `@throws \RuntimeException` (FQCN)
-     * - `@throws RuntimeException Description text`
+     * - "@throws RuntimeException"
+     * - "@throws RuntimeException|InvalidArgumentException"
+     * - "@throws \RuntimeException" (FQCN)
+     * - "@throws RuntimeException Description text"
      *
      * @return string[] Noms des classes d'exception (normalisés sans le \ initial)
      */

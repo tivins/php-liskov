@@ -7,13 +7,13 @@ namespace Tivins\LSP;
 /**
  * Represents a single Liskov Substitution Principle violation.
  */
-class LspViolation
+readonly class LspViolation
 {
     public function __construct(
-        public readonly string $className,
-        public readonly string $methodName,
-        public readonly string $contractName,
-        public readonly string $reason,
+        public string $className,
+        public string $methodName,
+        public string $contractName,
+        public string $reason,
     ) {
     }
 

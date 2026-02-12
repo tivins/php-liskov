@@ -1,6 +1,7 @@
 <?php
 
 use Tivins\LSP\LiskovSubstitutionPrincipleChecker;
+use Tivins\LSP\ThrowsDetector;
 
 require 'vendor/autoload.php';
 
@@ -13,11 +14,12 @@ $classes = [
 ];
 
 
-$checker = new LiskovSubstitutionPrincipleChecker();
+$checker = new LiskovSubstitutionPrincipleChecker(new ThrowsDetector());
 echo "Checking Liskov Substitution Principle...\n\n";
 
 $totalViolations = 0;
 $failedClasses = 0;
+$allViolations = [];
 
 foreach ($classes as $class) {
     $violations = $checker->check($class);
@@ -28,6 +30,7 @@ foreach ($classes as $class) {
     if (!$ok) {
         $failedClasses++;
         $totalViolations += count($violations);
+        $allViolations = array_merge($allViolations, $violations);
         foreach ($violations as $violation) {
             echo "       -> $violation\n";
         }
@@ -39,7 +42,7 @@ echo "Classes checked: " . count($classes) . "\n";
 echo "Passed: " . (count($classes) - $failedClasses) . " / " . count($classes) . "\n";
 echo "Total violations: $totalViolations\n";
 
-fwrite(STDERR, json_encode($violations, JSON_PRETTY_PRINT));
+fwrite(STDERR, json_encode($allViolations, JSON_PRETTY_PRINT));
 
 // Exit with code 1 if there were any failures, 0 otherwise.
 $exitCode = $failedClasses > 0 ? 1 : 0;
