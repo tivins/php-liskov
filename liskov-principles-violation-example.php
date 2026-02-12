@@ -54,6 +54,33 @@ class MyClass2 implements MyInterface2
 }
 
 # ------------------------------------------------------------
+# Example 2b: Exception hierarchy — contract allows RuntimeException, implementation throws subclass (LSP-compliant)
+# In PHP, UnexpectedValueException extends RuntimeException.
+# ------------------------------------------------------------
+
+interface MyInterface2b
+{
+    /**
+     * @throws RuntimeException
+     */
+    public function doSomething(): void;
+}
+
+/**
+ * Throwing UnexpectedValueException (subclass of RuntimeException) is allowed by the contract.
+ */
+class MyClass2b implements MyInterface2b
+{
+    /**
+     * @throws \UnexpectedValueException
+     */
+    public function doSomething(): void
+    {
+        throw new \UnexpectedValueException("unexpected value");
+    }
+}
+
+# ------------------------------------------------------------
 # Example 3: Violation of Liskov Substitution Principle (Incorrect Implementation)
 # ------------------------------------------------------------
 

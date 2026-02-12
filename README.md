@@ -12,7 +12,7 @@ A subclass or implementation must not weaken the contract of its parent or inter
 
 - A method must not **declare** (in docblocks) or **throw** (in code) exception types that are not allowed by the contract (interface or parent class).
 - If the contract says nothing about exceptions, the implementation must not throw (or declare) any.
-- If the contract documents `@throws SomeException`, the implementation may throw that type.
+- If the contract documents `@throws SomeException`, the implementation may throw that type or any **subclass** (exception hierarchy is respected; e.g. contract `@throws RuntimeException` allows throwing `UnexpectedValueException`).
 
 Violations are reported in two ways:
 

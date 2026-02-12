@@ -15,6 +15,7 @@ use ReflectionMethod;
  * Currently checks:
  * - Exception contract violations via docblock (@throws not declared in parent/interface)
  * - Exception contract violations via AST (actual throw statements not allowed by contract)
+ * - Exception hierarchy: throwing a subclass of a contract-allowed exception is allowed (LSP-compliant).
  *
  * @todo Check parameter type contravariance (preconditions)
  * @todo Check return type covariance (postconditions)
@@ -108,9 +109,11 @@ readonly class LiskovSubstitutionPrincipleChecker
         $classThrowsDeclared = $this->throwsDetector->getDeclaredThrows($classMethod);
         $classThrowsActual = $this->throwsDetector->getActualThrows($classMethod);
 
-        // Violation if the class DECLARES throws not present in the contract
-        $unexpectedDeclared = array_diff($classThrowsDeclared, $contractThrows);
-        foreach ($unexpectedDeclared as $exceptionType) {
+        // Violation if the class DECLARES throws not allowed by the contract (strict or subclass)
+        foreach ($classThrowsDeclared as $exceptionType) {
+            if ($this->isExceptionAllowedByContract($exceptionType, $contractThrows, $class, $contract)) {
+                continue;
+            }
             $violations[] = new LspViolation(
                 className: $class->getName(),
                 methodName: $classMethod->getName(),
@@ -122,9 +125,11 @@ readonly class LiskovSubstitutionPrincipleChecker
             );
         }
 
-        // Violation if the class ACTUALLY throws exceptions not present in the contract
-        $unexpectedActual = array_diff($classThrowsActual, $contractThrows);
-        foreach ($unexpectedActual as $exceptionType) {
+        // Violation if the class ACTUALLY throws exceptions not allowed by the contract (strict or subclass)
+        foreach ($classThrowsActual as $exceptionType) {
+            if ($this->isExceptionAllowedByContract($exceptionType, $contractThrows, $class, $contract)) {
+                continue;
+            }
             $violations[] = new LspViolation(
                 className: $class->getName(),
                 methodName: $classMethod->getName(),
@@ -137,5 +142,49 @@ readonly class LiskovSubstitutionPrincipleChecker
         }
 
         return $violations;
+    }
+
+    /**
+     * Resolve an exception type name to its FQCN using the class namespace.
+     * Ensures a leading backslash for global namespace so class_exists/is_subclass_of resolve correctly.
+     */
+    private function resolveExceptionFqcn(string $type, ReflectionClass $class): string
+    {
+        $type = ltrim($type, '\\');
+        if (str_contains($type, '\\')) {
+            return '\\' . $type;
+        }
+        $namespace = $class->getNamespaceName();
+        if ($namespace !== '') {
+            return '\\' . $namespace . '\\' . $type;
+        }
+        return '\\' . $type;
+    }
+
+    /**
+     * Return true if the thrown exception type is allowed by the contract:
+     * same type or a subclass of any exception declared in the contract (LSP-compliant).
+     */
+    private function isExceptionAllowedByContract(
+        string $thrownType,
+        array $contractThrows,
+        ReflectionClass $class,
+        ReflectionClass $contract,
+    ): bool {
+        if (empty($contractThrows)) {
+            return false;
+        }
+        $thrownFqcn = $this->resolveExceptionFqcn($thrownType, $class);
+        foreach ($contractThrows as $contractType) {
+            $contractFqcn = $this->resolveExceptionFqcn($contractType, $contract);
+            if ($thrownFqcn === $contractFqcn) {
+                return true;
+            }
+            if (class_exists($thrownFqcn) && class_exists($contractFqcn)
+                && is_subclass_of($thrownFqcn, $contractFqcn)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

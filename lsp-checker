@@ -10,7 +10,7 @@ use Tivins\Process\StdWriter;
 # Load autoload.php from the root project
 $autoload = 'vendor/autoload.php';
 if (!is_file($autoload)) {
-    throw new Exception('"vendor/autoload.php" not found. Current directory: ' . __dir__);
+    throw new Exception('"vendor/autoload.php" not found. Current directory: ' . __DIR__);
 }
 require $autoload;
 

@@ -18,6 +18,7 @@ use Tivins\LSP\ThrowsDetector;
  * - MyClass3: interface has no @throws, implementation (via private) throws → violation
  * - MyClass4: interface has no @throws, code throws (no @throws docblock) → AST violation
  * - MyClass5: interface has no @throws, code throws via private method → AST violation
+ * - MyClass2b: interface has @throws RuntimeException, implementation throws UnexpectedValueException (subclass) → no violation (exception hierarchy)
  */
 final class LiskovSubstitutionPrincipleCheckerTest extends TestCase
 {
@@ -52,6 +53,14 @@ final class LiskovSubstitutionPrincipleCheckerTest extends TestCase
         $violations = $checker->check(\MyClass2::class);
 
         $this->assertEmpty($violations, 'MyClass2 should not violate LSP (interface documents @throws RuntimeException)');
+    }
+
+    public function testMyClass2bHasNoViolationsWhenThrowingSubclassOfContractException(): void
+    {
+        $checker = $this->createChecker();
+        $violations = $checker->check(\MyClass2b::class);
+
+        $this->assertEmpty($violations, 'MyClass2b should not violate LSP (contract allows RuntimeException, implementation throws UnexpectedValueException which is a subclass)');
     }
 
     public function testMyClass3HasViolations(): void
@@ -89,7 +98,7 @@ final class LiskovSubstitutionPrincipleCheckerTest extends TestCase
 
     public function testAllExampleClassesAreCheckedWithoutReflectionException(): void
     {
-        $classes = [\MyClass1::class, \MyClass2::class, \MyClass3::class, \MyClass4::class, \MyClass5::class];
+        $classes = [\MyClass1::class, \MyClass2::class, \MyClass2b::class, \MyClass3::class, \MyClass4::class, \MyClass5::class];
         $checker = $this->createChecker();
 
         foreach ($classes as $className) {

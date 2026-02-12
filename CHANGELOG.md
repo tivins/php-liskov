@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-13
+
+### Added
+- **Exception hierarchy** — A thrown exception type is now allowed by the contract if it is the same as or a **subclass** of any exception declared in the contract (LSP-compliant). Example: contract `@throws RuntimeException`, implementation throws `UnexpectedValueException` → no violation. This removes false positives when implementations throw more specific exception types.
+
+## [0.3.5] - 2026-02-13
+
+### Fixed
+- **Binary** — In `lsp-checker`, the exception message when `vendor/autoload.php` is not found now uses the correct PHP constant `__DIR__` instead of `__dir__` (which was displayed literally).
+
 ## [0.3.4] - 2026-02-13
 
 ### Added

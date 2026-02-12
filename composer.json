@@ -1,8 +1,8 @@
 {
   "name": "tivins/poc-liskov-check",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "PHP Liskov Substitution Principle violation checker",
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "license": "MIT",
   "authors": [
     {
@@ -16,7 +16,7 @@
   },
   "require": {
     "php": "^8.2",
-    "nikic/php-parser": "^5.0@dev"
+    "nikic/php-parser": "^5.0"
   },
   "bin": [
     "lsp-checker"
