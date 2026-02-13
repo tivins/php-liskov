@@ -9,7 +9,11 @@ use ReflectionClass;
 use ReflectionMethod;
 use Tivins\LSP\LiskovSubstitutionPrincipleChecker;
 use Tivins\LSP\LspViolation;
+use Tivins\LSP\ParameterTypeContravarianceRuleChecker;
+use Tivins\LSP\ReturnTypeCovarianceRuleChecker;
+use Tivins\LSP\ThrowsContractRuleChecker;
 use Tivins\LSP\ThrowsDetector;
+use Tivins\LSP\TypeSubtypeChecker;
 
 /**
  * Unit tests for namespace resolution in the LSP checker and ThrowsDetector.
@@ -40,7 +44,13 @@ final class NamespaceResolutionTest extends TestCase
 
     private function createChecker(): LiskovSubstitutionPrincipleChecker
     {
-        return new LiskovSubstitutionPrincipleChecker(new ThrowsDetector());
+        $throwsDetector = new ThrowsDetector();
+        $typeChecker = new TypeSubtypeChecker();
+        return new LiskovSubstitutionPrincipleChecker([
+            new ThrowsContractRuleChecker($throwsDetector),
+            new ReturnTypeCovarianceRuleChecker($typeChecker),
+            new ParameterTypeContravarianceRuleChecker($typeChecker),
+        ]);
     }
 
     // ================================================================

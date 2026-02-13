@@ -7,7 +7,11 @@ namespace Tivins\LSP\Tests;
 use PHPUnit\Framework\TestCase;
 use Tivins\LSP\LiskovSubstitutionPrincipleChecker;
 use Tivins\LSP\LspViolation;
+use Tivins\LSP\ParameterTypeContravarianceRuleChecker;
+use Tivins\LSP\ReturnTypeCovarianceRuleChecker;
+use Tivins\LSP\ThrowsContractRuleChecker;
 use Tivins\LSP\ThrowsDetector;
+use Tivins\LSP\TypeSubtypeChecker;
 
 /**
  * Unit tests for LiskovSubstitutionPrincipleChecker using the built-in example classes.
@@ -36,7 +40,13 @@ final class LiskovSubstitutionPrincipleCheckerTest extends TestCase
 
     private function createChecker(): LiskovSubstitutionPrincipleChecker
     {
-        return new LiskovSubstitutionPrincipleChecker(new ThrowsDetector());
+        $throwsDetector = new ThrowsDetector();
+        $typeChecker = new TypeSubtypeChecker();
+        return new LiskovSubstitutionPrincipleChecker([
+            new ThrowsContractRuleChecker($throwsDetector),
+            new ReturnTypeCovarianceRuleChecker($typeChecker),
+            new ParameterTypeContravarianceRuleChecker($typeChecker),
+        ]);
     }
 
     public function testMyClass1HasViolations(): void
@@ -149,12 +159,12 @@ final class LiskovSubstitutionPrincipleCheckerTest extends TestCase
      * narrows a parameter type (e.g. contract accepts Exception, child accepts RuntimeException).
      *
      * Since PHP itself prevents loading classes with narrowed parameter types (fatal error),
-     * we test the internal `isParameterTypeContravariant` method directly using ReflectionType
+     * we test the `isParameterTypeContravariant` method directly using ReflectionType
      * objects extracted from valid fixture classes.
      */
     public function testContravarianceDetectsViolationOnNarrowedParameterType(): void
     {
-        $checker = $this->createChecker();
+        $ruleChecker = new ParameterTypeContravarianceRuleChecker(new TypeSubtypeChecker());
 
         // Extract ReflectionType for Exception (wide) and RuntimeException (narrow)
         $wideType = (new \ReflectionParameter([ContravariantFixtureWide::class, 'foo'], 'e'))->getType();
@@ -163,17 +173,15 @@ final class LiskovSubstitutionPrincipleCheckerTest extends TestCase
         $wideContext = new \ReflectionClass(ContravariantFixtureWide::class);
         $narrowContext = new \ReflectionClass(ContravariantFixtureNarrow::class);
 
-        $method = new \ReflectionMethod($checker, 'isParameterTypeContravariant');
-
         // Valid contravariance: contract=narrow (RuntimeException), class=wide (Exception) → true
         $this->assertTrue(
-            $method->invoke($checker, $wideType, $narrowType, $wideContext, $narrowContext),
+            $ruleChecker->isParameterTypeContravariant($wideType, $narrowType, $wideContext, $narrowContext),
             'Exception (wider) should be contravariant with RuntimeException (narrower)'
         );
 
         // Invalid contravariance: contract=wide (Exception), class=narrow (RuntimeException) → false
         $this->assertFalse(
-            $method->invoke($checker, $narrowType, $wideType, $narrowContext, $wideContext),
+            $ruleChecker->isParameterTypeContravariant($narrowType, $wideType, $narrowContext, $wideContext),
             'RuntimeException (narrower) should NOT be contravariant with Exception (wider)'
         );
     }
@@ -183,8 +191,7 @@ final class LiskovSubstitutionPrincipleCheckerTest extends TestCase
      */
     public function testContravarianceWithUntypedParameters(): void
     {
-        $checker = $this->createChecker();
-        $method = new \ReflectionMethod($checker, 'isParameterTypeContravariant');
+        $ruleChecker = new ParameterTypeContravarianceRuleChecker(new TypeSubtypeChecker());
 
         $wideContext = new \ReflectionClass(ContravariantFixtureWide::class);
         $narrowContext = new \ReflectionClass(ContravariantFixtureNarrow::class);
@@ -193,19 +200,19 @@ final class LiskovSubstitutionPrincipleCheckerTest extends TestCase
 
         // Contract untyped, class untyped → valid
         $this->assertTrue(
-            $method->invoke($checker, null, null, $wideContext, $narrowContext),
+            $ruleChecker->isParameterTypeContravariant(null, null, $wideContext, $narrowContext),
             'Both untyped → valid'
         );
 
         // Contract typed, class untyped → valid (widening to mixed)
         $this->assertTrue(
-            $method->invoke($checker, null, $typedException, $wideContext, $narrowContext),
+            $ruleChecker->isParameterTypeContravariant(null, $typedException, $wideContext, $narrowContext),
             'Contract typed, class untyped → valid widening'
         );
 
         // Contract untyped, class typed → violation (strengthening precondition)
         $this->assertFalse(
-            $method->invoke($checker, $typedException, null, $wideContext, $narrowContext),
+            $ruleChecker->isParameterTypeContravariant($typedException, null, $wideContext, $narrowContext),
             'Contract untyped, class typed → violation'
         );
     }

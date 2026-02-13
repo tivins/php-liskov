@@ -2,7 +2,11 @@
 <?php
 
 use Tivins\LSP\LiskovSubstitutionPrincipleChecker;
+use Tivins\LSP\ParameterTypeContravarianceRuleChecker;
+use Tivins\LSP\ReturnTypeCovarianceRuleChecker;
+use Tivins\LSP\ThrowsContractRuleChecker;
 use Tivins\LSP\ThrowsDetector;
+use Tivins\LSP\TypeSubtypeChecker;
 use Tivins\Process\ClassFinder;
 use Tivins\Process\FormatType;
 use Tivins\Process\StdWriter;
@@ -55,7 +59,12 @@ if (empty($classes)) {
 }
 
 $writer = new StdWriter($verbose, $format);
-$checker = new LiskovSubstitutionPrincipleChecker(new ThrowsDetector());
+$typeChecker = new TypeSubtypeChecker();
+$checker = new LiskovSubstitutionPrincipleChecker([
+    new ThrowsContractRuleChecker(new ThrowsDetector()),
+    new ReturnTypeCovarianceRuleChecker($typeChecker),
+    new ParameterTypeContravarianceRuleChecker($typeChecker),
+]);
 $writer->message("Checking Liskov Substitution Principle...", "\n\n");
 
 $totalViolations = 0;

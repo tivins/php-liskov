@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-02-14
+
+### Changed
+- **Strategy pattern refactoring** — `LiskovSubstitutionPrincipleChecker` is now a pure orchestrator that delegates each LSP rule check to pluggable strategy implementations via the new `LspRuleCheckerInterface`. This improves the Single Responsibility Principle (SRP) and makes it easy to add, remove, or replace individual rules.
+
+### Added
+- **`LspRuleCheckerInterface`** — Strategy interface for individual LSP rule checks, with a single `check()` method returning `LspViolation[]`.
+- **`ThrowsContractRuleChecker`** — Strategy that checks exception contract violations (docblock `@throws` and actual throw statements via AST).
+- **`ReturnTypeCovarianceRuleChecker`** — Strategy that checks return type covariance between implementation and contract.
+- **`ParameterTypeContravarianceRuleChecker`** — Strategy that checks parameter type contravariance between implementation and contract.
+- **`TypeSubtypeChecker`** — Extracted component handling all PHP type comparison, subtyping (union, intersection, named types), normalization (`self`/`static`/`parent`), and string representation. Used by the return type and parameter type rule checkers.
+
+### Breaking
+- `LiskovSubstitutionPrincipleChecker` constructor now accepts `LspRuleCheckerInterface[]` instead of `ThrowsDetectorInterface`. Callers must assemble the rule checkers explicitly (see updated CLI binary and tests for examples).
+
 ## [0.11.0] - 2026-02-14
 
 ### Added
