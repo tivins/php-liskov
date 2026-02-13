@@ -6,6 +6,9 @@
 
 interface MyInterface1
 {
+    /**
+     * This method does not mention (docblock) throwing an exception. Subclasses must not throw any exceptions.
+     */
     public function doSomething(): void;
 }
 
@@ -16,7 +19,7 @@ class MyClass1 implements MyInterface1
 {
     /**
      * This method throws an exception, which violates the Liskov Substitution Principle.
-     * The subclass should not throw an exception if the parent class does not throw an exception.
+     * The subclass should not throw an exception if the parent class does not mention throwing an exception.
      * @throws RuntimeException
      */
     public function doSomething(): void
@@ -258,6 +261,8 @@ class MyClass9 implements MyInterface9
 
 # ------------------------------------------------------------
 # Example 10: Exception thrown in another class
+# The exception is thrown in an instance method of another class, called via (new Helper())->method().
+# Only AST analysis can catch this violation.
 # ------------------------------------------------------------
 
 interface MyInterface10

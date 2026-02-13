@@ -1,6 +1,6 @@
-# PoC - LSP violations detector
+# Liskov - LSP violations detector
 
-A PHP proof-of-concept that detects **Liskov Substitution Principle (LSP)** violations, focusing on exception contracts, return type covariance, and parameter type contravariance between classes and their contracts (interfaces and parent classes).
+A PHP tool that detects **Liskov Substitution Principle (LSP)** violations, focusing on exception contracts, return type covariance, and parameter type contravariance between classes and their contracts (interfaces and parent classes).
 
 
 [![CI](https://github.com/tivins/poc-liskov-check/actions/workflows/ci.yml/badge.svg)](https://github.com/tivins/poc-liskov-check/actions/workflows/ci.yml)
@@ -8,7 +8,33 @@ A PHP proof-of-concept that detects **Liskov Substitution Principle (LSP)** viol
 
 ## What it checks
 
-A subclass or implementation must not weaken the contract of its parent or interface. This POC verifies:
+```php
+interface MyInterface1
+{
+    /**
+     * This method does not menti throw an exception. Subclasses must not throw any exceptions.
+     */
+    public function doSomething(): void;
+}
+
+/**
+ * This class violates the Liskov Substitution Principle.
+ */
+class MyClass1 implements MyInterface1
+{
+    /**
+     * This method throws an exception, which violates the Liskov Substitution Principle.
+     * The subclass should not throw an exception if the parent class does not throw an exception.
+     */
+    public function doSomething(): void
+    {
+        throw new RuntimeException("exception is thrown");
+    }
+}
+```
+
+
+A subclass or implementation must not weaken the contract of its parent or interface. Liskov verifies:
 
 - A method must not **declare** (in docblocks) or **throw** (in code) exception types that are not allowed by the contract (interface or parent class).
 - If the contract says nothing about exceptions, the implementation must not throw (or declare) any.
@@ -30,6 +56,7 @@ Violations are reported in two ways:
   - Re-throws in catch: `catch (E $e) { throw $e; }`
   - **Transitive throws** — follows `$this->method()` calls within the same class (e.g. public method calling a private method that throws).
   - **Cross-class static calls** — follows `ClassName::method()` static calls to detect exceptions thrown transitively in external classes.
+  - **Cross-class instance calls** — follows `(new ClassName())->method()` calls to detect exceptions thrown by methods on newly created objects.
 - **Contract comparison** — checks against all implemented interfaces and the parent class.
 - **Return type covariance** — validates that overriding methods keep LSP-compliant covariant return types.
 - **Parameter type contravariance** — validates that overriding methods do not narrow parameter types (preconditions must not be strengthened).
@@ -178,7 +205,7 @@ liskov-principles-violation-example.php      # Example classes (MyClass1–MyCla
 
 ## Limitations
 
-- **Limited cross-class analysis** — `$this->method()` calls within the same class and `ClassName::method()` static calls to external classes are followed. However, dynamic method calls on objects (e.g. `$obj->method()`) and trait methods are not analyzed.
+- **Limited cross-class analysis** — `$this->method()` calls within the same class, `ClassName::method()` static calls, and `(new ClassName())->method()` instance calls to external classes are followed. However, dynamic method calls on variables (e.g. `$obj->method()` where `$obj` is a variable) and trait methods are not analyzed.
 - **No flow analysis** — e.g. `$e = new E(); throw $e;` is not resolved (we only handle `throw new X` and re-throws of catch variables).
 - **Reflection-based** — only works on loadable PHP code (files that can be parsed and reflected). When scanning a directory, a `vendor/autoload.php` is loaded automatically if found nearby.
 - **Parameter contravariance via Reflection only** — parameter type contravariance is checked on loaded classes. Since PHP itself enforces parameter compatibility at class load time, most violations are caught by the engine before the checker runs. The check is still useful as part of a comprehensive LSP report.

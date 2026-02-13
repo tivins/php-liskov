@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-02-14
+
+### Added
+- **Cross-class instance call exception detection** — `ThrowsDetector` now follows `(new ClassName())->method()` instance calls to detect exceptions thrown transitively by methods on newly created objects. This complements the existing static-call following (Example 9) and detects violations like Example 10 where the implementation instantiates a helper and calls a method that throws.
+- **Example 10** — `MyInterface10`/`MyClass10`/`MyClass10Helper`: implementation calls `(new MyClass10Helper())->doSomethingRisky()` which throws `RuntimeException` (cross-class AST detection).
+
 ## [0.9.0] - 2026-02-13
 
 ### Added
