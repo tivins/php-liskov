@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.0] - 2026-02-14
+
+## Changed
+
+- Rename project `php-solid`.
+
 ## [0.14.0] - 2026-02-14
 
 ### Added

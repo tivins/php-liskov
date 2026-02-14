@@ -1,7 +1,7 @@
 {
-  "name": "tivins/php-liskov",
-  "version": "0.14.0",
-  "description": "PHP Liskov Substitution Principle violation checker",
+  "name": "tivins/php-solid",
+  "version": "0.15.0",
+  "description": "PHP Solid Principles checker",
   "minimum-stability": "stable",
   "license": "MIT",
   "authors": [
