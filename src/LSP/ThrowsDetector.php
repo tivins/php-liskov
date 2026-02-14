@@ -25,15 +25,15 @@ class ThrowsDetector implements ThrowsDetectorInterface
     private array $useImportsCache = [];
 
     /**
-     * Retourne la liste des exceptions déclarées dans le "@throws" du docblock.
+     * Returns the list of exception types declared in the docblock's "@throws" tags.
      *
-     * Formats supportés :
+     * Supported formats:
      * - "@throws RuntimeException"
      * - "@throws RuntimeException|InvalidArgumentException"
      * - "@throws \RuntimeException" (FQCN)
      * - "@throws RuntimeException Description text"
      *
-     * @return string[] Noms des classes d'exception (normalisés sans le \ initial)
+     * @return string[] Exception class names (normalized without leading \)
      */
     public function getDeclaredThrows(ReflectionMethod $method): array
     {
@@ -137,21 +137,20 @@ class ThrowsDetector implements ThrowsDetectorInterface
     }
 
     /**
-     * Détecte les exceptions réellement lancées dans le corps de la méthode
-     * via analyse AST (nikic/php-parser).
+     * Detects exceptions actually thrown in the method body via AST analysis (nikic/php-parser).
      *
-     * Suit récursivement les appels internes ($this->method()) au sein de la même classe,
-     * les appels statiques cross-classe (ClassName::method()) et les appels sur instances
-     * créées localement ((new ClassName())->method()).
-     * Gère les cas suivants :
+     * Recursively follows internal calls ($this->method()) within the same class,
+     * cross-class static calls (ClassName::method()), and calls on locally created
+     * instances ((new ClassName())->method()).
+     * Handles the following cases:
      * - throw new Exception() (direct)
-     * - throw conditionnel (if/else)
-     * - re-throw dans un catch (catch (E $e) { throw $e; })
-     * - throw transitif via $this->privateMethod()
-     * - throw transitif via ClassName::staticMethod() (cross-class)
-     * - throw transitif via (new ClassName())->method() (instance cross-class)
+     * - conditional throw (if/else)
+     * - re-throw in a catch block (catch (E $e) { throw $e; })
+     * - transitive throw via $this->privateMethod()
+     * - transitive throw via ClassName::staticMethod() (cross-class)
+     * - transitive throw via (new ClassName())->method() (instance cross-class)
      *
-     * @return string[] Noms des classes d'exception (normalisés sans le \ initial)
+     * @return string[] Exception class names (normalized without leading \)
      */
     public function getActualThrows(ReflectionMethod $method): array
     {

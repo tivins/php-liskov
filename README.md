@@ -12,7 +12,7 @@ A PHP tool that detects **Liskov Substitution Principle (LSP)** violations, focu
 interface MyInterface1
 {
     /**
-     * This method does not mentions throw an exception. Subclasses must not throw any exceptions.
+     * This method does not mention throwing an exception. Subclasses must not throw any exceptions.
      */
     public function doSomething(): void;
 }
@@ -80,7 +80,7 @@ You can run the checker in two ways: by passing a directory, or by using a confi
 
 ### Scan a directory
 
-Pass a directory path as the first argument. The checker builds a `Config` with that directory and recursively finds all PHP classes to check:
+Pass a directory path as the first argument. The path is relative to the current working directory. The checker builds a `Config` with that directory and recursively finds all PHP classes to check:
 
 ```bash
 vendor/bin/lsp-checker src/
@@ -116,6 +116,8 @@ return (new Config())
 - **`addFile($path)`** — Include a single PHP file.
 - **`excludeDirectory($path)`** — Skip that directory and its contents when scanning.
 - **`excludeFile($path)`** — Skip that file even if it would be included by a directory.
+
+Paths are resolved relative to the **current working directory** when you run the checker (e.g. when you run `vendor/bin/lsp-checker --config lsp-config.php` from your project root, `addDirectory('src')` refers to `./src`).
 
 Without a directory and without `--config`, the script prints usage and exits:
 
