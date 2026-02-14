@@ -8,8 +8,4 @@ vendor
 .idea
 .cursor
 .vscode
-
-# Internal documentation
-phase2_ast.md
-RELEASE-v0.2.0.md
-pro_step.md
+next.md

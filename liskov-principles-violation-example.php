@@ -283,3 +283,35 @@ class MyClass10 implements MyInterface10
         (new MyClass10Helper())->doSomethingRisky();
     }
 }
+
+# ------------------------------------------------------------  
+# Example 11: Violation of Liskov Substitution Principle (Incorrect Implementation)
+# ------------------------------------------------------------
+
+interface MyInterface11
+{
+    public function doSomething(): void;
+}
+
+/**
+ * This trait violates the Liskov Substitution Principle.
+ */
+trait MyTrait11 {
+    /**
+     * This method throws an exception, which violates the Liskov Substitution Principle.
+     * The trait should not throw an exception if the interface does not mention throwing an exception.
+     */
+    public function doSomething(): void
+    {
+        throw new RuntimeException("runtime exception is thrown");
+    }
+}
+
+class MyClass11 implements MyInterface11
+{
+    /**
+     * The trait MyTrait11 throws an exception, which violates the Liskov Substitution Principle.
+     * The subclass should not throw an exception if the trait does not mention throwing an exception.
+     */
+    use MyTrait11;
+}

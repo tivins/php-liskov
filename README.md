@@ -12,7 +12,7 @@ A PHP tool that detects **Liskov Substitution Principle (LSP)** violations, focu
 interface MyInterface1
 {
     /**
-     * This method does not menti throw an exception. Subclasses must not throw any exceptions.
+     * This method does not mentions throw an exception. Subclasses must not throw any exceptions.
      */
     public function doSomething(): void;
 }
@@ -160,48 +160,6 @@ Total violations: 8
 
 - **Exit code**: `0` if all classes pass, `1` if any violation or load error is found (suitable for CI).
 - **JSON report**: Use `--json` to write a report to stdout: `{ "violations": [...], "errors": [...] }`.
-
-## Architecture
-
-```
-src/
-├── LSP/
-│   ├── ThrowsDetector.php                      # Extracts @throws from docblocks; detects actual throws via AST
-│   ├── LiskovSubstitutionPrincipleChecker.php  # Orchestrates checks against interfaces and parent class
-│   └── LspViolation.php                        # Value object (className, methodName, contractName, reason)
-└── Process/
-    ├── ClassFinder.php                         # Recursively scans a directory for PHP classes (via AST)
-    ├── FormatType.php                          # Output format enum (TEXT / JSON)
-    └── StdWriter.php                           # stdout / stderr writer with format filtering
-
-lsp-checker                                  # CLI entry point
-liskov-principles-violation-example.php      # Example classes (MyClass1–MyClass9), used by PHPUnit tests
-```
-
-- **ThrowsDetector**  
-  - `getDeclaredThrows(ReflectionMethod)` — returns exception types from `@throws` in the docblock.  
-  - `getActualThrows(ReflectionMethod)` — returns exception types from the method body (and transitively from `$this->method()` in the same class and `ClassName::method()` static calls across classes) via AST.
-
-- **LiskovSubstitutionPrincipleChecker**  
-  - `check(string $className)` — returns `LspViolation[]`.  
-  - For each method that overrides/implements a contract method, compares both declared and actual throws to the contract, checks return type covariance and parameter type contravariance, and reports any violations.
-
-- **ClassFinder**  
-  - `findClassesInDirectory(string $directory)` — recursively scans a directory for `.php` files, extracts fully qualified class names via AST, loads the files, and returns the class list.
-
-## Example cases (included)
-
-| Class    | Contract      | Result | Reason |
-|----------|---------------|--------|--------|
-| MyClass1 | No throws     | FAIL   | Throws and declares `RuntimeException` |
-| MyClass2 | `@throws RuntimeException` | PASS | Contract allows the throw |
-| MyClass3 | No throws     | FAIL   | Declares and throws via private helper |
-| MyClass4 | No throws     | FAIL   | Throws in code, no docblock (AST-only detection) |
-| MyClass5 | No throws     | FAIL   | Throws via `$this->doSomething()` (transitive AST) |
-| MyClass6 | Return `RuntimeException` | PASS | Returns `UnexpectedValueException` (covariant subtype) |
-| MyClass7 | Param `RuntimeException` | PASS | Accepts `Exception` (contravariant supertype) |
-| MyClass8 | Params `string`, `int` | PASS | Identical parameter types (trivially valid) |
-| MyClass9 | No throws     | FAIL | Throws via `MyClass9Helper::doSomethingRisky()` (cross-class AST) |
 
 ## Limitations
 
