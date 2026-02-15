@@ -261,7 +261,15 @@ class EmptyMethodRuleChecker implements IspRuleCheckerInterface
         };
 
         $traverser->addVisitor($collector);
-        $traverser->traverse($stmts);
+
+        try {
+            $traverser->traverse($stmts);
+        } catch (\LogicException $e) {
+            // PhpParser NodeTraverser may throw LogicException on edge cases (e.g. ensureReplacementReasonable).
+            // Treat as parse failure so check() still respects IspRuleCheckerInterface (no throws).
+            $this->astCache[$cacheKey] = null;
+            return null;
+        }
 
         $this->astCache[$cacheKey] = $collector->found;
         return $collector->found;

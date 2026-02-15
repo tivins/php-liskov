@@ -131,7 +131,7 @@ The classes (and their contracts — interfaces, parent classes) must be loadabl
 
 ### Configuration file
 
-Use `--config <file>` to load a PHP file that **returns** a `Tivins\Solid\LSP\Config` instance. The config defines which directories and files to scan, and optional exclusions:
+Use `--config <file>` to load a PHP file that **returns** a `Tivins\Solid\Config` instance. The config defines which directories and files to scan, optional exclusions, and optional ISP threshold.
 
 ```bash
 vendor/bin/php-solid --config config.php
@@ -140,7 +140,7 @@ vendor/bin/php-solid --config config.php
 **Config file:** Copy the bundled example to your project and adapt paths:
 
 - **Example file:** `config-example.php` (in the package root after install, or in this repo).
-- **Config class:** `Tivins\Solid\LSP\Config`.
+- **Config class:** `Tivins\Solid\Config`.
 
 Example (e.g. copy `config-example.php` to `config.php`):
 
@@ -149,7 +149,7 @@ Example (e.g. copy `config-example.php` to `config.php`):
 
 declare(strict_types=1);
 
-use Tivins\Solid\LSP\Config;
+use Tivins\Solid\Config;
 
 return (new Config())
     ->addDirectory('path/to/folder')
@@ -162,6 +162,7 @@ return (new Config())
 - **`addFile($path)`** — Include a single PHP file.
 - **`excludeDirectory($path)`** — Skip that directory and its contents when scanning.
 - **`excludeFile($path)`** — Skip that file even if it would be included by a directory.
+- **`setIspThreshold($n)`** — (Optional) Default fat-interface method threshold for this project. The CLI option `--isp-threshold <n>` overrides this when provided.
 
 Paths are resolved relative to the **current working directory** when you run the checker (e.g. when you run `vendor/bin/php-solid --config config.php` from your project root, `addDirectory('src')` refers to `./src`).
 
@@ -195,7 +196,7 @@ So you can capture only the result in a file and keep logs separate.
 | Option               | Description |
 |----------------------|-------------|
 | `<directory>`        | Directory to scan. **Required** when not using `--config`. |
-| `--config <file>`    | Path to a PHP file that returns a `Tivins\Solid\LSP\Config` instance. When present, `<directory>` is not required. |
+| `--config <file>`    | Path to a PHP file that returns a `Tivins\Solid\Config` instance. When present, `<directory>` is not required. |
 | `--lsp`              | Run only LSP checks (skip ISP). |
 | `--isp`              | Run only ISP checks (skip LSP). |
 | `--isp-threshold <n>` | Fat interface method threshold (default: 5). |

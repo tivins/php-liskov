@@ -8,10 +8,12 @@ declare(strict_types=1);
  * Usage: php-solid --config php-solid-config.php
  */
 
-use Tivins\Solid\LSP\Config;
+use Tivins\Solid\Config;
 
 return (new Config())
     ->addDirectory('path/to/folder')
     ->excludeDirectory('path/to/folder/excluded')
     ->addFile('path/to/file')
-    ->excludeFile('path/to/excluded/file');
+    ->excludeFile('path/to/excluded/file')
+    // ->setIspThreshold(7)  // optional: fat interface method threshold (CLI --isp-threshold overrides)
+    ;

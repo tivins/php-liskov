@@ -6,7 +6,7 @@ declare(strict_types=1);
 use Tivins\Solid\ISP\EmptyMethodRuleChecker;
 use Tivins\Solid\ISP\FatInterfaceRuleChecker;
 use Tivins\Solid\ISP\InterfaceSegregationPrincipleChecker;
-use Tivins\Solid\LSP\Config;
+use Tivins\Solid\Config;
 use Tivins\Solid\LSP\LiskovSubstitutionPrincipleChecker;
 use Tivins\Solid\LSP\ParameterTypeContravarianceRuleChecker;
 use Tivins\Solid\LSP\ReturnTypeCovarianceRuleChecker;
@@ -69,8 +69,8 @@ if (!$runLsp && !$runIsp) {
     $runIsp = true;
 }
 
-// ISP threshold
-$ispThreshold = FatInterfaceRuleChecker::DEFAULT_THRESHOLD;
+// ISP threshold (CLI override; config value applied after $config is ready)
+$ispThresholdCli = null;
 if (in_array('--isp-threshold', $argv)) {
     $thresholdIndex = array_search('--isp-threshold', $argv);
     $thresholdValue = $argv[$thresholdIndex + 1] ?? null;
@@ -78,7 +78,7 @@ if (in_array('--isp-threshold', $argv)) {
         fwrite(STDERR, "Error: --isp-threshold requires a positive integer.\n");
         exit(2);
     }
-    $ispThreshold = (int) $thresholdValue;
+    $ispThresholdCli = (int) $thresholdValue;
 }
 
 // First non-option argument = directory to scan (used when no --config).
@@ -120,6 +120,9 @@ if ($config === null) {
     $config = (new Config())->addDirectory($directory);
 }
 
+// Resolve ISP threshold: CLI overrides config, then checker default
+$ispThreshold = $ispThresholdCli ?? $config->getIspThreshold() ?? FatInterfaceRuleChecker::DEFAULT_THRESHOLD;
+
 # --- Main program -----------------------------------------------------------
 
 $finder  = new ClassFinder();
@@ -132,7 +135,7 @@ if (empty($classes)) {
 $writer = new StdWriter($verbose, $format);
 
 $totalViolations = 0;
-$failedClasses = 0;
+$failedClassNames = [];
 $allViolations = [];
 $allErrors = [];
 
@@ -160,7 +163,7 @@ if ($runLsp) {
         $writer->content(($ok ? "[PASS]" : "[FAIL]") . " $class", FormatType::TEXT);
 
         if (!$ok) {
-            $failedClasses++;
+            $failedClassNames[] = $class;
             if ($loadError !== null) {
                 $allErrors[] = ['class' => $class, 'message' => $loadError];
                 $writer->content("       -> Error: $loadError", FormatType::TEXT);
@@ -204,7 +207,7 @@ if ($runIsp) {
         $writer->content(($ok ? "[PASS]" : "[FAIL]") . " $class", FormatType::TEXT);
 
         if (!$ok) {
-            $failedClasses++;
+            $failedClassNames[] = $class;
             if ($loadError !== null) {
                 $allErrors[] = ['class' => $class, 'message' => $loadError];
                 $writer->content("       -> Error: $loadError", FormatType::TEXT);
@@ -229,7 +232,8 @@ if ($runIsp) {
 
 $writer->message("");
 $writer->message("Classes checked: " . count($classes));
-$writer->message("Passed: " . (count($classes) - $failedClasses) . " / " . count($classes));
+$failedCount = count(array_unique($failedClassNames));
+$writer->message("Passed: " . (count($classes) - $failedCount) . " / " . count($classes));
 $writer->message("Total violations: $totalViolations");
 
 $jsonReport = [
@@ -239,4 +243,4 @@ $jsonReport = [
 $writer->content(json_encode($jsonReport, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), FormatType::JSON);
 
 // Exit with code 1 if there were any failures, 0 otherwise.
-exit($failedClasses > 0 ? 1 : 0);
+exit($failedCount > 0 ? 1 : 0);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tivins\Solid\LSP;
+namespace Tivins\Solid;
 
 class Config
 {
@@ -14,7 +14,8 @@ class Config
     private array $excludedDirectories = [];
     /** @var list<string> */
     private array $excludedFiles = [];
-
+    /** Fat interface method threshold (null = use checker default). */
+    private ?int $ispThreshold = null;
 
     public function addFile(string $path): self
     {
@@ -27,7 +28,7 @@ class Config
         $this->directories[] = $path;
         return $this;
     }
-    
+
     public function excludeDirectory(string $path): self
     {
         $this->excludedDirectories[] = $path;
@@ -38,6 +39,17 @@ class Config
     {
         $this->excludedFiles[] = $path;
         return $this;
+    }
+
+    public function setIspThreshold(int $threshold): self
+    {
+        $this->ispThreshold = $threshold;
+        return $this;
+    }
+
+    public function getIspThreshold(): ?int
+    {
+        return $this->ispThreshold;
     }
 
     /** @return list<string> */

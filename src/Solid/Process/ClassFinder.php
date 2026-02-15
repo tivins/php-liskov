@@ -13,7 +13,7 @@ use PhpParser\ParserFactory;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
-use Tivins\Solid\LSP\Config;
+use Tivins\Solid\Config;
 
 /**
  * Scans a directory recursively for PHP files and extracts fully qualified class names.

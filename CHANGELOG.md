@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.0] - 2026-02-15
+
+### Breaking
+- **Config namespace** — `Config` has been moved from `Tivins\Solid\LSP\Config` to `Tivins\Solid\Config`. Update your config file: `use Tivins\Solid\Config;` and ensure the file returns an instance of this class.
+
+### Added
+- **ISP threshold in config** — You can set the fat-interface method threshold in the config file with `->setIspThreshold($n)`. The CLI option `--isp-threshold <n>` overrides the config value when provided. Priority: checker default (5) &lt; config file &lt; CLI.
+
+## [0.18.2] - 2026-02-15
+
+### Fixed
+- **EmptyMethodRuleChecker / LSP contract** — `check()` was reported as throwing `LogicException` (from PhpParser's `NodeTraverser::traverse`) while `IspRuleCheckerInterface` did not allow it. The interface now declares `@throws \LogicException` for implementations that use parsing libraries. `EmptyMethodRuleChecker` also catches `LogicException` around `traverse()` and treats it as parse failure so it does not propagate at runtime.
+
 ## [0.18.1] - 2026-02-15
 
 ### Fixed
