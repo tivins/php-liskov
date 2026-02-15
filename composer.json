@@ -1,6 +1,6 @@
 {
   "name": "tivins/php-solid",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "PHP Solid Principles checker",
   "minimum-stability": "stable",
   "license": "MIT",

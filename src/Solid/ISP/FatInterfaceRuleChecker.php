@@ -16,7 +16,7 @@ use ReflectionClass;
  */
 class FatInterfaceRuleChecker implements IspRuleCheckerInterface
 {
-    public const int DEFAULT_THRESHOLD = 5;
+    public const DEFAULT_THRESHOLD = 5;
 
     /**
      * @var array<string, bool> Track already-reported interfaces to avoid duplicate reports

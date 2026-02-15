@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.18.1] - 2026-02-15
+
+### Fixed
+- **PHP 8.2 compatibility** — Removed type from `FatInterfaceRuleChecker::DEFAULT_THRESHOLD` constant (typed class constants require PHP 8.3+).
+
 ## [0.18.0] - 2026-02-15
 
 ### Added
