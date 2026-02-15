@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.18.0] - 2026-02-15
+
+### Added
+- **Interface Segregation Principle (ISP) support** — New module `src/Solid/ISP/` with two rule checkers:
+  - **`EmptyMethodRuleChecker`** — Detects "dead" interface method implementations: methods with empty body (or comments only), methods that only throw `BadMethodCallException` (canonical "not implemented" marker), and methods that only `return;` or `return null;`. These patterns suggest the interface is too wide for the implementing class.
+  - **`FatInterfaceRuleChecker`** — Detects interfaces with more methods than a configurable threshold (default: 5). Reports once per interface.
+- **`InterfaceSegregationPrincipleChecker`** — Orchestrator that resolves a class's interfaces and delegates to ISP rule checkers (strategy pattern, same architecture as LSP).
+- **`IspViolation`** — Value object for ISP violations (`className`, `interfaceName`, `reason`, optional `details`).
+- **`IspRuleCheckerInterface`** — Strategy interface for pluggable ISP rule checks.
+- **CLI options for principle selection**:
+  - `--lsp` — Run only LSP checks.
+  - `--isp` — Run only ISP checks.
+  - When neither is specified, both LSP and ISP run (default).
+  - `--isp-threshold <n>` — Set fat interface method threshold (default: 5).
+- **ISP example file** — `examples/isp-violation-example.php` with 5 scenarios: empty stubs (robot worker), `BadMethodCallException` stubs (simple printer), `return;` stubs (read-only repository), fat interface (6 methods), and a compliant small interface.
+- **ISP tests** — `tests/InterfaceSegregationPrincipleCheckerTest.php` (10 tests) covering empty methods, exception stubs, return-null stubs, fat interface detection (above/below threshold), compliant classes, and `IspViolation` value object.
+- **CLI integration tests for ISP** — 6 new tests in `CliIntegrationTest.php`: ISP violation exit code, ISP compliant exit code, ISP JSON structure, `--lsp` skips ISP, `--isp` skips LSP, usage includes ISP options.
+- **JSON `principle` key** — Each violation in the JSON report now includes a `"principle"` key (`"LSP"` or `"ISP"`).
+
+### Changed
+- **CLI binary** — Now runs both LSP and ISP checks by default. Use `--lsp` or `--isp` to run a single principle. The usage message lists all new options.
+- **JSON report** — ISP violations use `interfaceName` instead of `contractName`/`methodName`. The `principle` key distinguishes LSP from ISP violations.
+
 ## [0.17.0] - 2026-02-15
 
 ### Added

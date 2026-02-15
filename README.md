@@ -1,12 +1,34 @@
-# php-liskov - LSP violations detector
+# php-solid - SOLID principles checker
 
-A PHP tool that detects **Liskov Substitution Principle (LSP)** violations, focusing on exception contracts, return type covariance, and parameter type contravariance between classes and their contracts (interfaces and parent classes).
+A PHP tool that checks **SOLID** principles in your codebase. It detects **Liskov Substitution Principle (LSP)** and **Interface Segregation Principle (ISP)** violations.
 
+[![CI](https://github.com/tivins/php-solid/actions/workflows/ci.yml/badge.svg)](https://github.com/tivins/php-solid/actions/workflows/ci.yml)
 
-[![CI](https://github.com/tivins/php-liskov/actions/workflows/ci.yml/badge.svg)](https://github.com/tivins/php-liskov/actions/workflows/ci.yml)
+---
 
+## Principles covered
 
-## What it checks
+- **LSP (Liskov Substitution Principle)** — Exception contracts, return type covariance, and parameter type contravariance between classes and their contracts (interfaces and parent classes).
+- **ISP (Interface Segregation Principle)** — Dead or empty methods, "not implemented" stubs, and fat interfaces (configurable threshold).
+
+---
+
+## LSP — What it checks
+
+A subclass or implementation must not weaken the contract of its parent or interface. The checker verifies:
+
+- A method must not **declare** (in docblocks) or **throw** (in code) exception types that are not allowed by the contract (interface or parent class).
+- If the contract says nothing about exceptions, the implementation must not throw (or declare) any.
+- If the contract documents `@throws SomeException`, the implementation may throw that type or any **subclass** (e.g. contract `@throws RuntimeException` allows throwing `UnexpectedValueException`).
+- A method return type must be **covariant** with the contract return type (same type or more specific subtype).
+- A method parameter type must be **contravariant** with the contract parameter type (same type or wider supertype). Narrowing a parameter type strengthens the precondition and is a violation.
+
+Violations are reported as:
+
+1. **Docblock violations** — `@throws` in the implementation that are not in the contract.
+2. **Code violations** — actual `throw` statements (detected via AST) for exception types not allowed by the contract.
+
+### LSP example
 
 ```php
 interface MyInterface1
@@ -24,7 +46,6 @@ class MyClass1 implements MyInterface1
 {
     /**
      * This method throws an exception, which violates the Liskov Substitution Principle.
-     * The subclass should not throw an exception if the parent class does not throw an exception.
      */
     public function doSomething(): void
     {
@@ -33,35 +54,55 @@ class MyClass1 implements MyInterface1
 }
 ```
 
-
-A subclass or implementation must not weaken the contract of its parent or interface. Liskov verifies:
-
-- A method must not **declare** (in docblocks) or **throw** (in code) exception types that are not allowed by the contract (interface or parent class).
-- If the contract says nothing about exceptions, the implementation must not throw (or declare) any.
-- If the contract documents `@throws SomeException`, the implementation may throw that type or any **subclass** (exception hierarchy is respected; e.g. contract `@throws RuntimeException` allows throwing `UnexpectedValueException`).
-- A method return type must be **covariant** with the contract return type (same type or more specific subtype).
-- A method parameter type must be **contravariant** with the contract parameter type (same type or wider supertype). Narrowing a parameter type strengthens the precondition and is a violation.
-
-Violations are reported in two ways:
-
-1. **Docblock violations** — `@throws` in the implementation that are not in the contract.
-2. **Code violations** — actual `throw` statements (detected via AST) for exception types not allowed by the contract.
-
-## Features
+### LSP features
 
 - **Docblock analysis** — parses `@throws` from PHPDoc (supports piped types, FQCN, descriptions).
 - **AST analysis** — uses [nikic/php-parser](https://github.com/nikic/PHP-Parser) to detect real `throw` statements:
-  - Direct throws: `throw new RuntimeException()`
-  - Conditional throws: `if (...) throw new E()`
-  - Re-throws in catch: `catch (E $e) { throw $e; }`
-  - **Transitive throws** — follows `$this->method()` calls within the same class (e.g. public method calling a private method that throws).
-  - **Cross-class static calls** — follows `ClassName::method()` static calls to detect exceptions thrown transitively in external classes.
-  - **Cross-class instance calls** — follows `(new ClassName())->method()` calls to detect exceptions thrown by methods on newly created objects.
-  - **Dynamic method calls on variables** — follows `$variable->method()` when the variable type is known: from parameter type hints (e.g. `function doSomething(Helper $helper)`) or from local assignments `$var = new ClassName();` (simple flow). Union types on parameters are supported (all class types are followed).
+  - Direct throws, conditional throws, re-throws in catch.
+  - **Transitive throws** — follows `$this->method()` calls within the same class.
+  - **Cross-class static/instance calls** — follows `ClassName::method()` and `(new ClassName())->method()`.
+  - **Dynamic method calls on variables** — follows `$variable->method()` when the variable type is known (parameter type hints, local assignments). Union types on parameters are supported.
 - **Contract comparison** — checks against all implemented interfaces and the parent class.
-- **Return type covariance** — validates that overriding methods keep LSP-compliant covariant return types.
-- **Parameter type contravariance** — validates that overriding methods do not narrow parameter types (preconditions must not be strengthened).
+- **Return type covariance** and **parameter type contravariance** validation.
 - **Cached parsing** — each file is parsed once; results are reused for multiple methods.
+
+---
+
+## ISP — What it checks
+
+Clients should not be forced to depend on methods they do not use. The checker detects:
+
+- **Dead or empty methods** — methods with an empty body (or comments only), suggesting the interface is too broad for this class.
+- **"Not implemented" stubs** — methods whose body is a single `throw new \BadMethodCallException(...)`, the canonical PHP way to signal an unsupported operation.
+- **Return-null/void stubs** — methods that only `return;` or `return null;`, another sign of a forced contract.
+- **Fat interfaces** — interfaces with more methods than a configurable threshold (default: 5). Reported once per interface.
+
+### ISP example
+
+```php
+interface WorkerInterface
+{
+    public function work(): void;
+    public function eat(): void;
+    public function sleep(): void;
+}
+
+// Robot doesn't need to eat or sleep → empty methods = ISP violation
+class RobotWorker implements WorkerInterface
+{
+    public function work(): void { echo "Working...\n"; }
+    public function eat(): void { /* empty — ISP violation */ }
+    public function sleep(): void { /* empty — ISP violation */ }
+}
+```
+
+### ISP features
+
+- **AST-based body analysis** — uses [nikic/php-parser](https://github.com/nikic/PHP-Parser) to inspect method bodies. Comment-only methods are treated as empty.
+- **Configurable threshold** — set the fat interface method threshold with `--isp-threshold <n>` (default: 5).
+- **Strategy pattern** — pluggable rule checkers via `IspRuleCheckerInterface`, same architecture as LSP.
+
+---
 
 ## Requirements
 
@@ -71,7 +112,7 @@ Violations are reported in two ways:
 ## Installation
 
 ```bash
-composer require tivins/php-liskov
+composer require tivins/php-solid
 ```
 
 ## Usage
@@ -80,7 +121,7 @@ You can run the checker in two ways: by passing a directory, or by using a confi
 
 ### Scan a directory
 
-Pass a directory path as the first argument. The path is relative to the current working directory. The checker builds a `Config` with that directory and recursively finds all PHP classes to check:
+Pass a directory path as the first argument. The path is relative to the current working directory. The checker builds a config with that directory and recursively finds all PHP classes to check:
 
 ```bash
 vendor/bin/php-solid src/
@@ -90,13 +131,18 @@ The classes (and their contracts — interfaces, parent classes) must be loadabl
 
 ### Configuration file
 
-Use `--config <file>` to load a PHP file that **returns** a `Tivins\LSP\Config` instance. The config defines which directories and files to scan, and optional exclusions:
+Use `--config <file>` to load a PHP file that **returns** a `Tivins\Solid\LSP\Config` instance. The config defines which directories and files to scan, and optional exclusions:
 
 ```bash
 vendor/bin/php-solid --config config.php
 ```
 
-Example config file (e.g. copy `config-example.php` to `config.php`):
+**Config file:** Copy the bundled example to your project and adapt paths:
+
+- **Example file:** `config-example.php` (in the package root after install, or in this repo).
+- **Config class:** `Tivins\Solid\LSP\Config`.
+
+Example (e.g. copy `config-example.php` to `config.php`):
 
 ```php
 <?php
@@ -123,14 +169,14 @@ Without a directory and without `--config`, the script prints usage and exits:
 
 ```bash
 vendor/bin/php-solid
-# Usage: php-solid <directory> [--config <file>] [--json] [--quiet]
-#        php-solid --config <file> [--json] [--quiet]
+# Usage: php-solid <directory> [options]
+#        php-solid --config <file> [options]
 #   ...
 ```
 
 ### Run unit tests
 
-The example classes in `examples/liskov-violation-example.php` are used by PHPUnit tests:
+The example classes in `examples/liskov-violation-example.php` and `examples/isp-violation-example.php` are used by PHPUnit tests:
 
 ```bash
 composer install
@@ -146,17 +192,22 @@ So you can capture only the result in a file and keep logs separate.
 
 ### Options
 
-| Option           | Description |
-|------------------|-------------|
-| `<directory>`    | Directory to scan. **Required** when not using `--config`. |
-| `--config <file>` | Path to a PHP file that returns a `Tivins\LSP\Config` instance. When present, `<directory>` is not required. |
-| `--quiet`        | Suppress progress and summary on stderr. Only the result (stdout) is produced — useful for CI or when piping. |
-| `--json`         | Machine-readable output: write only the JSON report to stdout; no [PASS]/[FAIL] lines. |
+| Option               | Description |
+|----------------------|-------------|
+| `<directory>`        | Directory to scan. **Required** when not using `--config`. |
+| `--config <file>`    | Path to a PHP file that returns a `Tivins\Solid\LSP\Config` instance. When present, `<directory>` is not required. |
+| `--lsp`              | Run only LSP checks (skip ISP). |
+| `--isp`              | Run only ISP checks (skip LSP). |
+| `--isp-threshold <n>` | Fat interface method threshold (default: 5). |
+| `--quiet`            | Suppress progress and summary on stderr. Only the result (stdout) is produced — useful for CI or when piping. |
+| `--json`             | Machine-readable output: write only the JSON report to stdout; no [PASS]/[FAIL] lines. |
+
+When neither `--lsp` nor `--isp` is specified, both principles are checked.
 
 ### Pipes and redirections
 
 | Goal | Command |
-|------|--------|
+|------|---------|
 | Save JSON report to a file | `vendor/bin/php-solid src/ --json > report.json` |
 | Save human result, hide progress | `vendor/bin/php-solid src/ --quiet > result.txt` |
 | Save progress/summary to a log | `vendor/bin/php-solid src/ 2> progress.log` (result stays on terminal) |
@@ -171,28 +222,29 @@ vendor/bin/php-solid src/ --json --quiet | jq '.violations | length'
 ```
 
 The JSON report is an object with two keys:
-- **`violations`** — array of LSP violations (each with `className`, `methodName`, `contractName`, `reason`).
+- **`violations`** — array of violations. Each violation has a `principle` key (`"LSP"` or `"ISP"`). LSP violations include `className`, `methodName`, `contractName`, `reason`, `details`. ISP violations include `className`, `interfaceName`, `reason`, `details`.
 - **`errors`** — array of load/reflection errors (each with `class`, `message`) for classes that could not be checked.
 
-Example output:
+### Example output
 
 ```
 Checking Liskov Substitution Principle...
 
 [FAIL] MyClass1
        -> MyClass1::doSomething() — contract MyInterface1 — @throws RuntimeException declared in docblock but not allowed by the contract
-       -> MyClass1::doSomething() — contract MyInterface1 — throws RuntimeException in code (detected via AST) but not allowed by the contract
 [PASS] MyClass2
-[FAIL] MyClass3
-       ...
-[FAIL] MyClass4
-       -> MyClass4::process() — contract MyInterface4 — throws RuntimeException in code (detected via AST) but not allowed by the contract
-[FAIL] MyClass5
-       -> MyClass5::process() — contract MyInterface5 — throws RuntimeException in code (detected via AST) but not allowed by the contract
 
-Classes checked: 5
-Passed: 1 / 5
-Total violations: 8
+Checking Interface Segregation Principle...
+
+[PASS] MyClass1
+[FAIL] RobotWorker
+       -> RobotWorker — interface WorkerInterface — Method eat() is empty (no statements) — interface may be too wide for this class.
+       -> RobotWorker — interface WorkerInterface — Method sleep() is empty (no statements) — interface may be too wide for this class.
+[PASS] HumanWorker
+
+Classes checked: 4
+Passed: 2 / 4
+Total violations: 3
 ```
 
 - **Exit code**: `0` if all classes pass, `1` if any violation or load error is found (suitable for CI).
@@ -200,10 +252,18 @@ Total violations: 8
 
 ## Limitations
 
+### LSP
 - **Limited dynamic call resolution** — `$variable->method()` calls are followed only when the variable type can be statically resolved: parameter type hints (e.g. `function doSomething(Helper $helper)`) and simple local assignments (`$var = new ClassName()`). Dynamic calls where the variable type cannot be determined (e.g. untyped parameter, factory return, or complex control flow) are not followed. Trait methods used via `use SomeTrait` are analyzed, but `$this->method()` calls within a trait body are not resolved to the using class.
 - **No flow analysis** — e.g. `$e = new E(); throw $e;` is not resolved (we only handle `throw new X` and re-throws of catch variables).
-- **Reflection-based** — only works on loadable PHP code (files that can be parsed and reflected). When scanning, a `vendor/autoload.php` is loaded automatically if found in or near the target paths.
 - **Parameter contravariance via Reflection only** — parameter type contravariance is checked on loaded classes. Since PHP itself enforces parameter compatibility at class load time, most violations are caught by the engine before the checker runs. The check is still useful as part of a comprehensive LSP report.
+
+### ISP
+- **Single-statement stubs only** — the empty method checker detects single-statement patterns (`throw new BadMethodCallException(...)`, `return;`, `return null;`). Multi-statement stubs or more complex "do nothing" patterns are not detected.
+- **No partial usage analysis** — the checker does not yet analyze how consumers use interface-typed parameters (i.e. which methods are actually called). This is planned for a future release.
+- **`BadMethodCallException` only** — only `BadMethodCallException` (and subclasses) are recognized as "not implemented" markers. Generic exceptions like `RuntimeException` are intentionally excluded to avoid false positives.
+
+### General
+- **Reflection-based** — only works on loadable PHP code (files that can be parsed and reflected). When scanning, a `vendor/autoload.php` is loaded automatically if found in or near the target paths.
 
 ## License
 

@@ -138,4 +138,69 @@ final class CliIntegrationTest extends TestCase
         $this->assertEmpty($json['violations']);
         $this->assertEmpty($json['errors']);
     }
+
+    // --- ISP CLI tests ---
+
+    public function testIspViolationDirectoryExitsWithCode1(): void
+    {
+        $dir = self::$projectRoot . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR . 'cli-isp-violation';
+        $result = $this->runCli([$dir, '--isp']);
+        $this->assertSame(1, $result['exit'], 'Expected exit code 1 for ISP violations');
+        $this->assertStringContainsString('[FAIL]', $result['stdout']);
+    }
+
+    public function testIspCompliantDirectoryExitsWithCode0(): void
+    {
+        $dir = self::$projectRoot . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR . 'cli-isp-ok';
+        $result = $this->runCli([$dir, '--isp', '--json']);
+        $this->assertSame(0, $result['exit']);
+        $json = json_decode($result['stdout'], true);
+        $this->assertIsArray($json);
+        $this->assertEmpty($json['violations']);
+    }
+
+    public function testIspJsonViolationStructure(): void
+    {
+        $dir = self::$projectRoot . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR . 'cli-isp-violation';
+        $result = $this->runCli([$dir, '--isp', '--json']);
+        $json = json_decode($result['stdout'], true);
+        $this->assertNotEmpty($json['violations'], 'Fixture has at least one ISP violation');
+
+        foreach ($json['violations'] as $v) {
+            $this->assertIsArray($v);
+            $this->assertArrayHasKey('principle', $v);
+            $this->assertSame('ISP', $v['principle']);
+            $this->assertArrayHasKey('className', $v);
+            $this->assertArrayHasKey('interfaceName', $v);
+            $this->assertArrayHasKey('reason', $v);
+        }
+    }
+
+    public function testLspOnlySkipsIspChecks(): void
+    {
+        $dir = self::$projectRoot . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR . 'cli-isp-violation';
+        $result = $this->runCli([$dir, '--lsp', '--json']);
+        // No LSP violations in the ISP fixture → exit 0
+        $this->assertSame(0, $result['exit']);
+        $json = json_decode($result['stdout'], true);
+        $this->assertEmpty($json['violations']);
+    }
+
+    public function testIspOnlySkipsLspChecks(): void
+    {
+        $dir = self::$projectRoot . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR . 'cli-example';
+        $result = $this->runCli([$dir, '--isp', '--json']);
+        // No ISP violations in the LSP fixture → exit 0
+        $this->assertSame(0, $result['exit']);
+        $json = json_decode($result['stdout'], true);
+        $this->assertEmpty($json['violations']);
+    }
+
+    public function testUsageShowsIspOptions(): void
+    {
+        $result = $this->runCli([]);
+        $this->assertStringContainsString('--lsp', $result['stderr']);
+        $this->assertStringContainsString('--isp', $result['stderr']);
+        $this->assertStringContainsString('--isp-threshold', $result['stderr']);
+    }
 }
